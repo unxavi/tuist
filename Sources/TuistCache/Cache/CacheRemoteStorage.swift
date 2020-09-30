@@ -99,15 +99,24 @@ public final class CacheRemoteStorage: CacheStoring {
         do {
             let archiver = try fileArchiverFactory.makeFileArchiver(for: paths)
             let destinationZipPath = try archiver.zip(name: hash)
+            let contentMD5 = try FileHandler.shared.base64MD5(path: destinationZipPath)
             let resource = try CloudCacheResponse.storeResource(
                 hash: hash,
                 cloud: cloudConfig,
-                contentMD5: try FileHandler.shared.base64MD5(path: destinationZipPath)
+                contentMD5: contentMD5
+            )
+            
+            let confirmUploadResource = try CloudCacheResponse.confirmUploadResource(
+                hash: hash,
+                cloud: cloudConfig,
+                contentMD5: contentMD5
             )
 
             return cloudClient
-                .request(resource)
+                .request(storeResource)
                 .map { (responseTuple) -> URL in responseTuple.object.data.url }
+                .request(confirmUploadResource)
+                .map { (comnfirmUploadResource) -> URL in responseTuple.object.data.url }
                 .flatMapCompletable { (url: URL) in
                     let deleteCompletable = self.deleteZipArchiveCompletable(archiver: archiver)
                     return self.fileClient.upload(file: destinationZipPath, hash: hash, to: url).asCompletable()
