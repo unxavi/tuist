@@ -16,16 +16,17 @@ extension URL {
         ]
         return urlComponents.url!
     }
-    
-    static func apiCacheUploadConfirmationURL(hash: String,
-                                              cacheURL: URL,
-                                              projectId: String) throws -> URL
+
+    static func apiCacheVerifyUploadURL(hash: String,
+                                        cacheURL _: URL,
+                                        projectId: String) throws -> URL
     {
-        guard var urlComponents = URLComponents(url: cacheURL, resolvingAgainstBaseURL: false) else {
+        let url: URL = URL(string: "http://127.0.0.1:3000")!
+        guard var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
             throw CacheAPIError.incorrectCloudURL
         }
 
-        urlComponents.path = "/api/cache/upload_confirmation"
+        urlComponents.path = "/api/cache/verify_upload"
         urlComponents.queryItems = [
             URLQueryItem(name: "project_id", value: projectId),
             URLQueryItem(name: "hash", value: hash),

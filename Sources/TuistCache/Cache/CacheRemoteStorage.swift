@@ -105,8 +105,8 @@ public final class CacheRemoteStorage: CacheStoring {
                 cloud: cloudConfig,
                 contentMD5: contentMD5
             )
-            
-            let confirmUploadResource = try CloudCacheResponse.confirmUploadResource(
+
+            let verifyUploadResource = try CloudCacheResponse.verifyUploadResource(
                 hash: hash,
                 cloud: cloudConfig,
                 contentMD5: contentMD5
@@ -115,11 +115,10 @@ public final class CacheRemoteStorage: CacheStoring {
             return cloudClient
                 .request(storeResource)
                 .map { (responseTuple) -> URL in responseTuple.object.data.url }
-                .request(confirmUploadResource)
-                .map { (comnfirmUploadResource) -> URL in responseTuple.object.data.url }
                 .flatMapCompletable { (url: URL) in
                     let deleteCompletable = self.deleteZipArchiveCompletable(archiver: archiver)
                     return self.fileClient.upload(file: destinationZipPath, hash: hash, to: url).asCompletable()
+                        .andThen(self.cloudClient.request(verifyUploadResource).asCompletable())
                         .andThen(deleteCompletable)
                         .catchError { deleteCompletable.concat(.error($0)) }
                 }
